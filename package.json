@@ -1,0 +1,27 @@
+{
+  "name": "changeext",
+  "version": "1.0.0",
+  "description": "changes the extension of some filename to a new one",
+  "bin": {
+    "changeext": "./bin/changeext"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrunlee/changeext.git"
+  },
+  "keywords": [
+    "changeext",
+    "ext",
+    "filename"
+  ],
+  "author": "chrunlee",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chrunlee/changeext/issues"
+  },
+  "homepage": "https://github.com/chrunlee/changeext#readme",
+  "dependencies": {
+    "colors": "^1.1.2",
+    "minimist": "^1.2.0"
+  }
+}

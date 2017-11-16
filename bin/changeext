@@ -1,0 +1,125 @@
+
+var os = require('os');
+
+var fs = require('fs');
+
+var path = require('path');
+
+var colors = require('colors');
+
+colors.setTheme({
+  error : 'red',
+  success : 'green',
+  info : 'yellow'
+});
+
+var exec = require('child_process').exec;
+
+var spawn = require('child_process').spawn;
+
+var argv = require("minimist")(process.argv.slice(2), {
+  alias: {
+    'input': 'i',
+    'target': 't',
+    'directory': 'd',
+    'loop' : 'l'
+  },
+  string: ['input', 'target','directory'],
+  boolean : ['loop'],
+  'default': {
+    'directory': process.cwd()
+  }
+});
+
+if (argv.help) {
+  console.log("Usage:".info);
+  console.log("  changeext --help     // print help information".success);
+  console.log("  changeext txt js     // change 'txt' to 'js' ".success);
+  console.log("  changeext -i txt     // input file extensions".success);
+  console.log("  changeext -t js      // target file extensions".success);
+  console.log("  changeext -d /home/  // target directory for change".success);
+  console.log("  changeext -l         // loop file directory for change file extensions".success);
+  process.exit(0);
+}
+
+function rename (folderPath,input,target,loop){
+  fs.stat(folderPath,function(err,stats){
+    if(err){
+      console.log(err);
+    }else{
+      if(stats.isDirectory()){
+
+        if(loop === true && argv.loop === false){
+          return false;
+        }
+
+        if(loop === false && argv.loop === false){//不需要循环，但是目标路径为文件夹
+          loop = true;
+        }
+        
+        fs.readdir(folderPath,function(err2,files){
+          if(err2){
+            console.log(err2);
+          }else{
+            if(files && files.length > 0){
+              files.forEach(function(filename,index){
+
+                rename(path.join(folderPath,filename),input,target,loop);
+
+              });
+            }
+          }
+        });
+      }else{
+
+        var extname = path.extname(folderPath);
+
+        input = input.startsWith('.') ? input : '.'+input;
+
+        target = target.startsWith('.') ? target : '.'+target;
+
+        extname = extname.toLowerCase();
+
+        input = input.toLowerCase();
+
+        target = target.toLowerCase();
+
+        if(extname === input){
+
+          var newPath = folderPath.substring(0,folderPath.length - extname.length) + target;
+
+          fs.rename(folderPath,newPath,function(err){
+            if(err){
+              console.log(err);
+            }else{
+              console.log('Rename file : '+folderPath.info +' => '+newPath.info+' success.'.success);  
+            }
+          });
+        }
+      }
+    }
+    
+  });
+}
+
+if(argv.directory && fs.existsSync(argv.directory)){
+
+  if(argv.input && argv.target){
+
+    rename(argv.directory,argv.input,argv.target,argv.loop);
+
+  }else{
+    if(argv._[0] && argv._[1]){
+      rename(argv.directory,argv._[0],argv._[1]);
+    }else{
+      console.log('input file extensions and target file extensions must be not empty.'.error);  
+      process.exit(0);
+    }
+  }
+}else{
+
+  console.log('directory is not exists.'.error);
+
+  process.exit(0);
+
+}
