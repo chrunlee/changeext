@@ -75,9 +75,9 @@ function rename (folderPath,input,target,loop){
 
         var extname = path.extname(folderPath);
 
-        input = input.startsWith('.') ? input : '.'+input;
+        input = input.startsWith('.') || input == '' ? input : '.'+input;
 
-        target = target.startsWith('.') ? target : '.'+target;
+        target = target.startsWith('.') || target == '' ? target : '.'+target;
 
         extname = extname.toLowerCase();
 
@@ -105,16 +105,20 @@ function rename (folderPath,input,target,loop){
 
 if(argv.directory && fs.existsSync(argv.directory)){
 
-  if(argv.input && argv.target){
+  if( (argv.input && argv.target) || (argv.input === '' && argv.target) || (argv.input && argv.target === '') ){
 
     rename(argv.directory,argv.input,argv.target,argv.loop);
 
   }else{
     if(argv._[0] && argv._[1]){
+
       rename(argv.directory,argv._[0],argv._[1]);
+
     }else{
+
       console.log('input file extensions and target file extensions must be not empty.'.error);  
       process.exit(0);
+      
     }
   }
 }else{
