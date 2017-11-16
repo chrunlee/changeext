@@ -118,13 +118,12 @@ if(argv.directory && fs.existsSync(argv.directory)){
 
       console.log('input file extensions and target file extensions must be not empty.'.error);  
       process.exit(0);
-      
+
     }
   }
 }else{
 
   console.log('directory is not exists.'.error);
-
   process.exit(0);
 
 }
