@@ -1,6 +1,6 @@
 {
   "name": "changeext",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "changes the extension of some filename to a new one",
   "bin": {
     "changeext": "./bin/changeext"

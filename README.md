@@ -19,6 +19,7 @@ $ changeext -i js -t txt // change 'js' to 'txt'
 $ changeext -d /home/test/ -i js -t txt
 // or loop for directory
 $ changeext -d /home/test/ -i js -t txt -l
+$ changeext txt js -r // change file extension with random name
 ```
 
 ## License
