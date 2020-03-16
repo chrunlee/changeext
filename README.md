@@ -20,6 +20,7 @@ $ changeext -d /home/test/ -i js -t txt
 // or loop for directory
 $ changeext -d /home/test/ -i js -t txt -l
 $ changeext txt js -r // change file extension with random name
+$ changeext txt js -e // encode the file or decode,decode info is fixed with 0xff
 ```
 
 ## License

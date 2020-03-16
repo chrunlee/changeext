@@ -1,6 +1,6 @@
 {
   "name": "changeext",
-  "version": "1.0.3",
+  "version": "1.2.0",
   "description": "changes the extension of some filename to a new one",
   "bin": {
     "changeext": "./bin/changeext"
@@ -21,6 +21,7 @@
   },
   "homepage": "https://github.com/chrunlee/changeext#readme",
   "dependencies": {
+    "async": "^3.0.1",
     "colors": "^1.1.2",
     "minimist": "^1.2.0"
   }

@@ -8,6 +8,8 @@ var path = require('path');
 
 var colors = require('colors');
 
+var async = require('async');
+
 colors.setTheme({
   error : 'red',
   success : 'green',
@@ -24,12 +26,16 @@ var argv = require("minimist")(process.argv.slice(2), {
     'target': 't',
     'directory': 'd',
     'loop' : 'l',
-    'random' : 'r'
+    'random' : 'r',
+    'encode' : 'e'
   },
   string: ['input', 'target','directory'],
-  boolean : ['loop','random'],
+  boolean : ['loop','random','encode'],
   'default': {
-    'directory': process.cwd()
+    'directory': process.cwd(),
+    'encode' : false,
+    'random' : false,
+    'loop' : false
   }
 });
 
@@ -42,6 +48,7 @@ if (argv.help) {
   console.log("  changeext -d /home/  // target directory for change".success);
   console.log("  changeext -l         // loop file directory for change file extensions".success);
   console.log("  changeext txt js -r  // get some random name");
+  console.log("  changeext txt js -e // encode the file or decode,decode info is fixed with 0xff")
   process.exit(0);
 }
 
@@ -55,80 +62,81 @@ function getRandom(){
       return  guid + (counter++).toString( 32 );
   })();
 }
-function rename (folderPath,input,target,loop){
-  fs.stat(folderPath,function(err,stats){
+
+function getFileList(folderPath,input,loop){
+  var fileList = fs.readdirSync(folderPath);
+  var rst = [];
+  fileList.forEach(function(item){
+    var absPath = path.join(folderPath,item);
+    var stats = fs.statSync(absPath);
+    var extname = path.extname(absPath);
+    input = input == '' ? '' : (input.startsWith('.') ? input.toLowerCase() : ('.'+input).toLowerCase());
+    if(loop && stats.isDirectory()){
+      rst = rst.concat(getFileList(absPath,loop));
+    }else if(extname.toLowerCase() == input){
+      rst.push(absPath);
+    }
+  })
+  return rst;
+}
+function renameFile(filePath,target,random,encode,cb){
+  var name = path.basename(filePath);
+  var extname = path.extname(filePath);
+  var parentDir = path.dirname(filePath);
+  target = target == '' ? '' : (target.startsWith('.') ? target.toLowerCase() : ('.'+target).toLowerCase());
+  if(random){
+    name = getRandom()+target;
+  }else{
+    name = name.replace(extname,'')+target;
+  }
+  var newPath = path.join(parentDir,name);
+  if(encode){
+    var buffer = fs.readFileSync(filePath);
+    var newBuff = buffer.map(function(item){
+      item = item ^ 0xff;
+      return item;
+    })
+    
+    fs.writeFileSync(newPath,newBuff);
+    if(!extname.endsWith(target)){
+      fs.unlinkSync(filePath);
+    }
+    console.log('Rename file : '+filePath.info +' => '+newPath.info+' success.'.success);  
+    cb()
+  }else{
+    fs.rename(filePath,newPath,function(err){
+      if(err){
+        cb(err);
+      }else{
+        console.log('Rename file : '+filePath.info +' => '+newPath.info+' success.'.success);  
+        cb();
+      }
+    });
+  }
+}
+function rename (folderPath,input,target,loop,random,encode){
+  var fileList = getFileList(folderPath,input,loop);
+  async.mapLimit(fileList,50,function(item,cb){
+    renameFile(item,target,random,encode,cb);
+  },function(err,values){
     if(err){
       console.log(err);
-    }else{
-      if(stats.isDirectory()){
-
-        if(loop === true && argv.loop === false){
-          return false;
-        }
-
-        if(loop === false && argv.loop === false){//不需要循环，但是目标路径为文件夹
-          loop = true;
-        }
-        
-        fs.readdir(folderPath,function(err2,files){
-          if(err2){
-            console.log(err2);
-          }else{
-            if(files && files.length > 0){
-              files.forEach(function(filename,index){
-
-                rename(path.join(folderPath,filename),input,target,loop);
-
-              });
-            }
-          }
-        });
-      }else{
-
-        var extname = path.extname(folderPath);
-
-        input = input.startsWith('.') || input == '' ? input : '.'+input;
-
-        target = target.startsWith('.') || target == '' ? target : '.'+target;
-
-        extname = extname.toLowerCase();
-
-        input = input.toLowerCase();
-
-        target = target.toLowerCase();
-
-        if(extname === input){
-          var newPath = "";
-          if(argv.random){
-            var randomName = getRandom() + target;
-            newPath = path.join(path.dirname(folderPath),randomName);
-          }else{
-            newPath = folderPath.substring(0,folderPath.length - extname.length) + target;  
-          }
-          fs.rename(folderPath,newPath,function(err){
-            if(err){
-              console.log(err);
-            }else{
-              console.log('Rename file : '+folderPath.info +' => '+newPath.info+' success.'.success);  
-            }
-          });
-        }
-      }
     }
-    
-  });
+    process.exit(0);
+  })
 }
 
 if(argv.directory && fs.existsSync(argv.directory)){
 
-  if( (argv.input && argv.target) || (argv.input === '' && argv.target) || (argv.input && argv.target === '') ){
+  //支持空后缀，如果不写则修改为空后缀
+  if( null != argv.input && null != argv.target && undefined != argv.input && undefined != argv.target){
 
-    rename(argv.directory,argv.input,argv.target,argv.loop);
+    rename(argv.directory,argv.input,argv.target,argv.loop,argv.random,argv.encode);
 
   }else{
     if(argv._[0] && argv._[1]){
 
-      rename(argv.directory,argv._[0],argv._[1]);
+      rename(argv.directory,argv._[0],argv._[1],argv.loop,argv.random,argv.encode);
 
     }else{
 
